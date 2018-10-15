@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="hgarrereyn">
+<meta name="description" content="CTF writeups">
+<meta name="generator" content="Hugo 0.25.1" />
+<title>MeePwn 2017 - bs (100pt)</title>
+<link rel="shortcut icon" href="https://ctf.harrisongreen.me/images/favicon.png">
+<link rel="stylesheet" href="https://ctf.harrisongreen.me/css/style.css">
+<link rel="stylesheet" href="https://ctf.harrisongreen.me/css/highlight.css">
+
+
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+
+
+
+
+<meta property="og:title" content="MeePwn 2017 - bs (100pt)" />
+<meta property="og:description" content="Buffer overflow leading to multi-part GOT overwrite" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://ctf.harrisongreen.me/2017/meepwn/bs/" />
+
+
+
+<meta property="article:published_time" content="2017-07-16T00:00:00&#43;00:00"/>
+<meta property="article:modified_time" content="2017-07-16T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta itemprop="name" content="MeePwn 2017 - bs (100pt)">
+<meta itemprop="description" content="Buffer overflow leading to multi-part GOT overwrite">
+
+
+<meta itemprop="dateModified" content="2017-07-16T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="916">
+
+
+
+<meta itemprop="keywords" content="exploit," />
+
+
+
+  <meta name="twitter:card" content="summary"/>
+
+
+
+<meta name="twitter:text:title" content="MeePwn 2017 - bs (100pt)"/>
+<meta name="twitter:title" content="MeePwn 2017 - bs (100pt)"/>
+<meta name="twitter:description" content="Buffer overflow leading to multi-part GOT overwrite"/>
+
+
+
+    </head>
+<body>
+    <nav class="main-nav">
+	
+		<a href='https://ctf.harrisongreen.me'> <span class="arrow">←</span>Home</a>
+	
+
+	
+
+	
+</nav>
+
+    <section id="wrapper">
+        
+        
+<article class="post">
+    <header>
+        <h1>MeePwn 2017 - bs (100pt)</h1>
+        <h2 class="headline">
+        July 16, 2017
+        <br>
+        
+        
+            
+                <a href="https://ctf.harrisongreen.me/tags/exploit">exploit</a>
+            
+        
+        
+        </h2>
+    </header>
+    <section id="post-body">
+        
+
+<h1 id="bs-100pt">bs (100pt)</h1>
+
+<p><strong><code>Exploitation</code></strong></p>
+
+<p><strong>Files:</strong></p>
+
+<ul>
+<li><a href="/code/2017/MeePwn/bs">bs</a></li>
+<li>Exploit script: <a href="/code/2017/MeePwn/solveBS.py">solveBS.py</a></li>
+</ul>
+
+<h1 id="summary">Summary</h1>
+
+<p>This challenge was really fun because I got to use ROP gadgets and GOT overwrites in the same exploit. The program itself allowed the user to enter a sequence of numbers which were sorted with a quick sort algorithm. Then the user could specify a target number and the program used a binary search to find the target. If it was found, the user could edit the values at that location and each location after it.</p>
+
+<p>The main vulnerability occured during the binary search portion. If the user entered enough numbers, the buffer pointer could jump before the start of the buffer and into the GOT table. This allowed an attacker to overwrite multiple stdlib functions in such a way as to simulate the function call <code>system('sh')</code> and spawn a shell.</p>
+
+<h1 id="part-1-root-check">Part 1 - Root Check</h1>
+
+<p>The program starts by calling a login subroutine that reads 16 bytes from <code>/dev/urandom</code> and compares it to bytes read from stdin. If they match, the subroutine returns zero. Otherwise, the user is allowed to enter a user id via <code>scanf(%d, &amp;val)</code>. The program exits if the supplied id is equal to zero or greater than 256.</p>
+
+<p>A second subroutine takes that value and sets an <code>is_root</code> bit if the value is zero. However, it only checks the lowest two bytes. Therefore, entering a signed value such as: <code>-2147418112</code> (<code>0xFFFF0000</code>) is enough to fool the check and set the <code>is_root</code> bit to 1.</p>
+
+<h1 id="part-2-got-access">Part 2 - GOT Access</h1>
+
+<p>Once the <code>is_root</code> bit is set, the user is able to enter more than 32 numbers (which is required to obtain the buffer error). This part was a bit of trial and error. I used gdb to read memory near the GOT table and figure out which memory addresses corresponded to which buffer addresses. In the final exploit, I ended up sending 121 numbers which allowed me to jump to a consistent place in the GOT table.</p>
+
+<p>Then I was able to iterate through the GOT table and overwrite certain values. The tricky part was figuring out how to craft a shell using only sequential GOT overwrites.</p>
+
+<p>The GOT table is ordered like this:</p>
+
+<pre><code class="language-x86asm">             read@GOT:
+0804b00c         dd         0x0804c000
+             printf@GOT:
+0804b010         dd         0x0804c004
+             memcmp@GOT:
+0804b014         dd         0x0804c008
+             puts@GOT:
+0804b018         dd         0x0804c00c
+             exit@GOT:
+0804b01c         dd         0x0804c014
+             open@GOT:
+0804b020         dd         0x0804c018
+             __libc_start_main@GOT:
+0804b024         dd         0x0804c01c
+             setvbuf@GOT:
+0804b028         dd         0x0804c020
+             __isoc99_scanf@GOT:
+0804b02c         dd         0x0804c024
+</code></pre>
+
+<h1 id="part-3-vulnerable-call">Part 3 - Vulnerable Call</h1>
+
+<p>In the entire program, the only libc call on a user suplied buffer is in the login subroutine where the program checks <code>/dev/urandom</code> bytes against stdin bytes:</p>
+
+<pre><code class="language-x86asm">             login:
+080485cb         push       ebp                                                 ; CODE XREF=main2+47
+080485cc         mov        ebp, esp
+080485ce         sub        esp, 0x38
+080485d1         sub        esp, 0x8
+080485d4         push       0x0                                                 ; argument &quot;oflag&quot; for method j_open
+080485d6         push       0x8048c50                                           ; &quot;/dev/urandom&quot;, argument &quot;path&quot; for method j_open
+080485db         call       j_open
+080485e0         add        esp, 0x10
+080485e3         mov        dword [ebp+var_C], eax
+080485e6         sub        esp, 0x4
+080485e9         push       0x10                                                ; argument &quot;nbyte&quot; for method j_read
+080485eb         lea        eax, dword [ebp+var_1C]
+080485ee         push       eax                                                 ; argument &quot;buf&quot; for method j_read
+080485ef         push       dword [ebp+var_C]                                   ; argument &quot;fildes&quot; for method j_read
+080485f2         call       j_read
+080485f7         add        esp, 0x10
+080485fa         sub        esp, 0xc
+080485fd         push       0x8048c5d                                           ; &quot;Enter your password:&quot;, argument &quot;s&quot; for method j_puts
+08048602         call       j_puts
+08048607         add        esp, 0x10
+0804860a         sub        esp, 0x4
+0804860d         push       0x10                                                ; argument &quot;nbyte&quot; for method j_read
+0804860f         lea        eax, dword [ebp+var_2C]
+08048612         push       eax                                                 ; argument &quot;buf&quot; for method j_read
+08048613         push       0x0                                                 ; argument &quot;fildes&quot; for method j_read
+08048615         call       j_read
+0804861a         add        esp, 0x10
+0804861d         sub        esp, 0x4
+08048620         push       0x10                                                ; argument &quot;n&quot; for method j_memcmp
+08048622         lea        eax, dword [ebp+var_2C]
+08048625         push       eax                                                 ; argument &quot;s2&quot; for method j_memcmp
+08048626         lea        eax, dword [ebp+var_1C]
+08048629         push       eax                                                 ; argument &quot;s1&quot; for method j_memcmp
+0804862a         call       j_memcmp
+0804862f         add        esp, 0x10
+08048632         test       eax, ea
+</code></pre>
+
+<p>The problem is that the user-supplied buffer is the <em>second</em> argument to <code>memcmp</code> and the command string to <code>system</code> must be the first argument. So overwriting <code>memcmp@GOT</code> with <code>system@GOT</code> would turn this:</p>
+
+<pre><code class="language-c">memcmp(&amp;random_bytes, &amp;user_bytes, 0x10);
+</code></pre>
+
+<p>into this:</p>
+
+<pre><code class="language-c">system(&amp;random_bytes); // ignores user_bytes
+</code></pre>
+
+<h1 id="part-4-control-both-buffers">Part 4 - Control <em>Both</em> Buffers</h1>
+
+<p>If we can somehow control the data in the first buffer, we can call <code>system</code> with our own string.</p>
+
+<p>Currently, the random bytes are read like this:</p>
+
+<pre><code class="language-c">char rand_bytes[16];
+char user_bytes[16];
+
+int file = open(&quot;/dev/urandom&quot;, 0);
+read(file, &amp;rand_bytes, 16);
+
+read(0, &amp;user_bytes, 16);
+</code></pre>
+
+<p>The solution is to overwrite <code>open@GOT</code> with a gadget that returns zero. This way, the following <code>read</code> call will use a file descriptor of zero which indicates stdin.</p>
+
+<p>I used ROPgadget to find a <code>xor eax; ret</code> gadget. This effectively turned the control flow into:</p>
+
+<pre><code class="language-c">char rand_bytes[16];
+char user_bytes[16];
+
+int file = 0;
+read(file, &amp;rand_bytes, 16);
+
+read(0, &amp;user_bytes, 16);
+</code></pre>
+
+<p>Then we are able to pass the bytes <code>sh</code> and spawn a shell.</p>
+
+<h1 id="part-5-launch-exploit">Part 5 - Launch Exploit</h1>
+
+<p>The last step is to jump back to the login procedure once we have overwritten all the values.</p>
+
+<p>I did this by replacing <code>scanf@GOT</code> with the address of <code>&lt;login&gt;</code>.</p>
+
+<p><em>Even though <code>scanf</code> is used in the section of code that actually writes buffer values, it is the last entry in the GOT table and therefore we can overwrite this last without breaking things.</em></p>
+
+<h1 id="full-exploit">Full Exploit</h1>
+
+<ol>
+<li>Trick root check with a signed negative number</li>
+<li>Exploit incorrect logic to get a GOT table pointer</li>
+<li>Overwrite GOT addresses:
+
+<ul>
+<li><code>memcmp</code> -&gt; <code>system</code></li>
+<li><code>open</code> -&gt; <code>xor eax; ret</code> gadget</li>
+<li><code>scanf</code> -&gt; <code>&lt;login&gt;</code></li>
+</ul></li>
+<li>Enter <code>sh</code> bytes to spawn shell</li>
+</ol>
+
+    </section>
+</article>
+
+<footer id="post-meta" class="clearfix">
+    <a href="https://twitter.com/hgarrereyn">
+    <img class="avatar" src="https://ctf.harrisongreen.me/images/avatar.png">
+    <div>
+        <span class="dark">hgarrereyn</span>
+        <span></span>
+    </div>
+    </a>
+    <section id="sharing">
+        <a class="twitter" href="https://twitter.com/intent/tweet?text=https%3a%2f%2fctf.harrisongreen.me%2f2017%2fmeepwn%2fbs%2f - MeePwn%202017%20-%20bs%20%28100pt%29 by @hgarrereyn"><span class="icon-twitter"> tweet</span></a>
+
+<a class="facebook" href="#" onclick="
+    window.open(
+      'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),
+      'facebook-share-dialog',
+      'width=626,height=436');
+    return false;"><span class="icon-facebook-rect"> Share</span>
+</a>
+
+    </section>
+</footer>
+
+<div id="disqus_thread"></div>
+<script>
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "hgar" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+<ul id="post-list" class="archive readmore">
+    <h3>Read more</h3>
+
+    
+    
+    
+        <li>
+            <a href="/2018/uiuctf/galactic-brainfuck/">UIUCTF 2018 - Galactic Brain[fuck] (300pt)<aside class="dates">Apr 8 2018</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2018/uiuctf/how2heap/">UIUCTF 2018 - how2heap (300pt)<aside class="dates">Apr 8 2018</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/csaw/scv/">CSAW - SCV (100pt)<aside class="dates">Sep 19 2017</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/sha2017/megan-35/">SHA2017 - Megan-35 (200pt)<aside class="dates">Aug 6 2017</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/sha2017/stolen-bitcoins/">SHA2017 - Stolen Bitcoins (300pt)<aside class="dates">Aug 6 2017</aside></a>
+        </li>
+    
+</ul>
+
+
+
+        <footer id="footer">
+    
+        <div id="social">
+
+	
+	
+    <a class="symbol" href="https://www.github.com/hgarrereyn">
+        <i class="fa fa-github"></i>
+    </a>
+    
+
+
+</div>
+
+    
+    <p class="small">
+    
+        © Copyright 2018 Harrison Green
+    
+    </p>
+</footer>
+
+    </section>
+    
+<script src="https://ctf.harrisongreen.me/js/main.js"></script>
+<script src="https://ctf.harrisongreen.me/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-104192995-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+</body>
+</html>

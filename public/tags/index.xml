@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on hgarrereyn</title>
+    <link>https://ctf.harrisongreen.me/tags/</link>
+    <description>Recent content in Tags on hgarrereyn</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 08 Apr 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://ctf.harrisongreen.me/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Exploit</title>
+      <link>https://ctf.harrisongreen.me/tags/exploit/</link>
+      <pubDate>Sun, 08 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://ctf.harrisongreen.me/tags/exploit/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Reverse</title>
+      <link>https://ctf.harrisongreen.me/tags/reverse/</link>
+      <pubDate>Sun, 06 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://ctf.harrisongreen.me/tags/reverse/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Reversing</title>
+      <link>https://ctf.harrisongreen.me/tags/reversing/</link>
+      <pubDate>Sun, 08 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://ctf.harrisongreen.me/tags/reversing/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

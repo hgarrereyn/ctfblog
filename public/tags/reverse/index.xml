@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Reverse on hgarrereyn</title>
+    <link>https://ctf.harrisongreen.me/tags/reverse/</link>
+    <description>Recent content in Reverse on hgarrereyn</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 06 Aug 2017 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://ctf.harrisongreen.me/tags/reverse/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>SHA2017 - Stolen Bitcoins (300pt)</title>
+      <link>https://ctf.harrisongreen.me/2017/sha2017/stolen-bitcoins/</link>
+      <pubDate>Sun, 06 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://ctf.harrisongreen.me/2017/sha2017/stolen-bitcoins/</guid>
+      <description>Stolen Bitcoins (300pt) Reverse
+Description: Someone stole our Bitcoins, luckily we captured the transaction. Can you find the flag that will allow us to get them back?
+Files:
+ stolenbitcoins.tgz Decoded script for convenience: script.txt  Solution Opening the archive reveals a transmission file with some encoded data:
+01000000000100e40b5402000000f...  Since the description says this is a Bitcoin transaction, I tried decoding it with Chain Query which revealed the following information:</description>
+    </item>
+    
+  </channel>
+</rss>

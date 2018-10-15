@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="hgarrereyn">
+<meta name="description" content="CTF writeups">
+<meta name="generator" content="Hugo 0.25.1" />
+<title>SHA2017 - Stolen Bitcoins (300pt)</title>
+<link rel="shortcut icon" href="https://ctf.harrisongreen.me/images/favicon.png">
+<link rel="stylesheet" href="https://ctf.harrisongreen.me/css/style.css">
+<link rel="stylesheet" href="https://ctf.harrisongreen.me/css/highlight.css">
+
+
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+
+
+
+
+<meta property="og:title" content="SHA2017 - Stolen Bitcoins (300pt)" />
+<meta property="og:description" content="Reverse engineer bitcoin script" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://ctf.harrisongreen.me/2017/sha2017/stolen-bitcoins/" />
+
+
+
+<meta property="article:published_time" content="2017-08-06T00:00:00&#43;00:00"/>
+<meta property="article:modified_time" content="2017-08-06T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta itemprop="name" content="SHA2017 - Stolen Bitcoins (300pt)">
+<meta itemprop="description" content="Reverse engineer bitcoin script">
+
+
+<meta itemprop="dateModified" content="2017-08-06T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="1473">
+
+
+
+<meta itemprop="keywords" content="reverse," />
+
+
+
+  <meta name="twitter:card" content="summary"/>
+
+
+
+<meta name="twitter:text:title" content="SHA2017 - Stolen Bitcoins (300pt)"/>
+<meta name="twitter:title" content="SHA2017 - Stolen Bitcoins (300pt)"/>
+<meta name="twitter:description" content="Reverse engineer bitcoin script"/>
+
+
+
+    </head>
+<body>
+    <nav class="main-nav">
+	
+		<a href='https://ctf.harrisongreen.me'> <span class="arrow">←</span>Home</a>
+	
+
+	
+
+	
+</nav>
+
+    <section id="wrapper">
+        
+        
+<article class="post">
+    <header>
+        <h1>SHA2017 - Stolen Bitcoins (300pt)</h1>
+        <h2 class="headline">
+        August 6, 2017
+        <br>
+        
+        
+            
+                <a href="https://ctf.harrisongreen.me/tags/reverse">reverse</a>
+            
+        
+        
+        </h2>
+    </header>
+    <section id="post-body">
+        
+
+<h1 id="stolen-bitcoins-300pt">Stolen Bitcoins (300pt)</h1>
+
+<p><strong><code>Reverse</code></strong></p>
+
+<p><strong>Description:</strong> Someone stole our Bitcoins, luckily we captured the transaction. Can you find the flag that will allow us to get them back?</p>
+
+<p><strong>Files:</strong></p>
+
+<ul>
+<li><a href="/code/2017/SHA2017/stolen-bitcoins/stolenbitcoins.tgz">stolenbitcoins.tgz</a></li>
+<li>Decoded script for convenience: <a href="/code/2017/SHA2017/stolen-bitcoins/script.txt">script.txt</a></li>
+</ul>
+
+<h1 id="solution">Solution</h1>
+
+<p>Opening the archive reveals a transmission file with some encoded data:</p>
+
+<pre><code>01000000000100e40b5402000000f...
+</code></pre>
+
+<p>Since the description says this is a Bitcoin transaction, I tried decoding it with <a href="https://chainquery.com/bitcoin-api/decoderawtransaction">Chain Query</a> which revealed the following information:</p>
+
+<pre><code class="language-json">{
+	&quot;result&quot;: {
+		&quot;txid&quot;: &quot;3997ec296bdc4d7c521369c64d84ebb170cf9263ebc40d2b568e22059b02f0f5&quot;,
+		&quot;hash&quot;: &quot;3997ec296bdc4d7c521369c64d84ebb170cf9263ebc40d2b568e22059b02f0f5&quot;,
+		&quot;size&quot;: 672,
+		&quot;vsize&quot;: 672,
+		&quot;version&quot;: 1,
+		&quot;locktime&quot;: 0,
+		&quot;vin&quot;: [
+
+		],
+		&quot;vout&quot;: [
+			{
+				&quot;value&quot;: 100.00000000,
+				&quot;n&quot;: 0,
+				&quot;scriptPubKey&quot;: {
+					&quot;asm&quot;: &quot;0 10 OP_PICK 23 OP_PICK OP_ADD 99 OP_EQUAL OP_ADD 33 OP_PICK 21 OP_PICK OP_ADD 198 OP_EQUAL OP_ADD 37 OP_PICK 98 OP_ADD 206 OP_EQUAL OP_ADD 29 OP_PICK 25 OP_PICK OP_ADD 104 OP_EQUAL OP_ADD 26 OP_PICK 29 OP_PICK OP_ADD 148 OP_EQUAL OP_ADD 6 OP_PICK 3 OP_PICK OP_ADD 157 OP_EQUAL OP_ADD 30 OP_PICK OP_RIPEMD160 412fc6097e62d5c494b8df37e3805805467d1a2c OP_EQUAL OP_ADD 13 OP_PICK 11 OP_PICK OP_ADD 105 OP_EQUAL OP_ADD 32 OP_PICK 34 OP_PICK OP_ADD 155 OP_EQUAL OP_ADD 1 OP_PICK 113 OP_ADD 238 OP_EQUAL OP_ADD 18 OP_PICK 32 OP_PICK OP_ADD 149 OP_EQUAL OP_ADD 5 OP_PICK 3 OP_PICK OP_ADD 157 OP_EQUAL OP_ADD 2 OP_PICK 4 OP_PICK OP_ADD 112 OP_EQUAL OP_ADD 9 OP_PICK 34 OP_PICK OP_ADD 158 OP_EQUAL OP_ADD 25 OP_PICK 30 OP_PICK OP_ADD 149 OP_EQUAL OP_ADD 4 OP_PICK 11 OP_PICK OP_ADD 148 OP_EQUAL OP_ADD 21 OP_PICK 17 OP_PICK OP_ADD 111 OP_EQUAL OP_ADD 36 OP_PICK 22 OP_ADD 119 OP_EQUAL OP_ADD 27 OP_PICK 17 OP_PICK OP_ADD 106 OP_EQUAL OP_ADD 22 OP_PICK 17 OP_PICK OP_ADD 105 OP_EQUAL OP_ADD 35 OP_PICK 12 OP_ADD 115 OP_EQUAL OP_ADD 38 OP_PICK 111 OP_ADD 213 OP_EQUAL OP_ADD 8 OP_PICK 23 OP_PICK OP_ADD 106 OP_EQUAL OP_ADD 31 OP_PICK 7 OP_PICK OP_ADD 151 OP_EQUAL OP_ADD 12 OP_PICK 28 OP_PICK OP_ADD 148 OP_EQUAL OP_ADD 34 OP_PICK 53 OP_ADD 176 OP_EQUAL OP_ADD 28 OP_PICK 22 OP_PICK OP_ADD 106 OP_EQUAL OP_ADD 19 OP_PICK 4 OP_PICK OP_ADD 108 OP_EQUAL OP_ADD 23 OP_PICK OP_RIPEMD160 c47907abd2a80492ca9388b05c0e382518ff3960 OP_EQUAL OP_ADD 15 OP_PICK 18 OP_PICK OP_ADD 155 OP_EQUAL OP_ADD 11 OP_PICK OP_RIPEMD160 8e95e8ccac6c8eb91b8a7a8f02bca2fa2268d4b2 OP_EQUAL OP_ADD 16 OP_PICK 21 OP_PICK OP_ADD 152 OP_EQUAL OP_ADD 3 OP_PICK 34 OP_PICK OP_ADD 156 OP_EQUAL OP_ADD 17 OP_PICK 3 OP_PICK OP_ADD 157 OP_EQUAL OP_ADD 24 OP_PICK 20 OP_PICK OP_ADD 106 OP_EQUAL OP_ADD 7 OP_PICK OP_RIPEMD160 38f77e12c50a398d5eae85c9408667f971d09d09 OP_EQUAL OP_ADD 14 OP_PICK 29 OP_PICK OP_ADD 107 OP_EQUAL OP_ADD 20 OP_PICK 23 OP_PICK OP_ADD 147 OP_EQUAL OP_ADD OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP 38 OP_EQUAL&quot;,
+					&quot;hex&quot;: &quot;4c01004c010a794c011779934c016387934c0121794c011579934c02c60087934c0125794c0162934c02ce0087934c011d794c011979934c016887934c011a794c011d79934c02940087934c0106794c010379934c029d0087934c011e79a64c14412fc6097e62d5c494b8df37e3805805467d1a2c87934c010d794c010b79934c016987934c0120794c012279934c029b0087934c0101794c0171934c02ee0087934c0112794c012079934c02950087934c0105794c010379934c029d0087934c0102794c010479934c017087934c0109794c012279934c029e0087934c0119794c011e79934c02950087934c0104794c010b79934c02940087934c0115794c011179934c016f87934c0124794c0116934c017787934c011b794c011179934c016a87934c0116794c011179934c016987934c0123794c010c934c017387934c0126794c016f934c02d50087934c0108794c011779934c016a87934c011f794c010779934c02970087934c010c794c011c79934c02940087934c0122794c0135934c02b00087934c011c794c011679934c016a87934c0113794c010479934c016c87934c011779a64c14c47907abd2a80492ca9388b05c0e382518ff396087934c010f794c011279934c029b0087934c010b79a64c148e95e8ccac6c8eb91b8a7a8f02bca2fa2268d4b287934c0110794c011579934c02980087934c0103794c012279934c029c0087934c0111794c010379934c029d0087934c0118794c011479934c016a87934c010779a64c1438f77e12c50a398d5eae85c9408667f971d09d0987934c010e794c011d79934c016b87934c0114794c011779934c029300879377777777777777777777777777777777777777777777777777777777777777777777777777774c012687&quot;,
+					&quot;type&quot;: &quot;nonstandard&quot;
+				}
+			}
+		]
+	},
+	&quot;error&quot;: null,
+	&quot;id&quot;: null
+}
+</code></pre>
+
+<p>Here we can see that it is a transaction to pay <strong>a lot</strong> of bitcoins to a single utxo with a suspiciously long script.</p>
+
+<p>For those who are unfamiliar: when you <em>send</em> bitcoins to someone, you don&rsquo;t actually send it to their account or address. Instead, you provide a script (also known as a &ldquo;locking script&rdquo; or &ldquo;scriptPubKey&rdquo;) written in Bitcoin&rsquo;s appropriatly named scripting language: <a href="https://en.bitcoin.it/wiki/Script">Script</a>.</p>
+
+<p>In order for someone to later spend this utxo, they must be able to validate the script. Essentially, this means they will provide another script (the &ldquo;unlocking script&rdquo; or &ldquo;scriptSig&rdquo;) that is concatenated before the locking script. If the entire program runs without failure and terminates with a non-zero value at the top of the stack, the transaction is valid.</p>
+
+<p>Normally, people will use one of a few common scripts such as Pay-to-Public-Key-Hash (P2PKH) or Pay-to-Multisig (P2MS) which have the same effect as actually sending bitcoins to an address. However, this is not a requirement.</p>
+
+<h1 id="the-script">The Script</h1>
+
+<p>While the script looks very intimidating at first glance, it can be broken down and understood.</p>
+
+<p>We start with a single zero that just pushes the value zero onto the stack:</p>
+
+<pre><code class="language-py">0
+</code></pre>
+
+<p>Then the following type of pattern repeats:</p>
+
+<pre><code class="language-py">10 OP_PICK 
+23 OP_PICK 
+OP_ADD 
+99 
+OP_EQUAL 
+OP_ADD
+</code></pre>
+
+<p>Let&rsquo;s break it down and see what it does. I&rsquo;ll go opcode by opcode and keep track of the stack. First, we have a stack containing some previous values (that we have to figure out) followed by that zero:</p>
+
+<p><em>(I&rsquo;m drawing a stack that grows upwards)</em></p>
+
+<pre><code>--- &lt;&lt; base
+0
+val_1
+val_2
+val_3
+...
+val_n
+</code></pre>
+
+<p>The <code>OP_PICK</code> code pops <code>n</code> off the top of the stack and then copies the value <code>n</code> bytes back to the top of the stack. So after performing:</p>
+
+<pre><code class="language-py">10 OP_PICK
+</code></pre>
+
+<p>the stack looks like:</p>
+
+<pre><code>val_10
+--- &lt;&lt; base
+0
+val_1
+val_2
+val_3
+...
+val_n
+</code></pre>
+
+<p>Then we perform another <code>OP_PICK</code>, however since the stack has grown by one, we are actually selecting the <code>n-1</code>th value. (This tripped me up for a while). So our stack now looks like this:</p>
+
+<pre><code>val_22
+val_10
+--- &lt;&lt; base
+0
+val_1
+val_2
+val_3
+...
+val_n
+</code></pre>
+
+<p>Next, we perform a <code>OP_ADD</code> which simply pops two values off the stack, adds them, then pushes the sum back on:</p>
+
+<pre><code>val_10 + val_22
+--- &lt;&lt; base
+0
+val_1
+val_2
+val_3
+...
+val_n
+</code></pre>
+
+<p>Then we push a constant onto the stack: <code>99</code>.</p>
+
+<pre><code>99
+val_10 + val_22
+--- &lt;&lt; base
+0
+val_1
+val_2
+val_3
+...
+val_n
+</code></pre>
+
+<p>Next, we perform an <code>OP_EQUAL</code> which pops two values off the stack and checks if they are equal. If they are, a <code>1</code> is pushed onto the stack. Otherwise, a <code>0</code> is pushed on.</p>
+
+<pre><code>(val_10 + val_22 == 99 ? 1 : 0)
+--- &lt;&lt; base
+0
+val_1
+val_2
+val_3
+...
+val_n
+</code></pre>
+
+<p>Finally, an <code>OP_ADD</code> takes this <code>1</code> or <code>0</code> value and adds it to the zero from earlier.</p>
+
+<p>In this way, the stack pointer has been reset to the original position for the next block:</p>
+
+<pre><code class="language-py">33 OP_PICK 
+21 OP_PICK 
+OP_ADD 
+198 
+OP_EQUAL 
+OP_ADD
+</code></pre>
+
+<p>Now, what conditions have to be met in order to validate the transaction? Well, after a whole bunch of these code sections, we see the following:</p>
+
+<pre><code class="language-py">OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP OP_NIP OP_NIP 
+OP_NIP OP_NIP 
+
+38 
+OP_EQUAL
+</code></pre>
+
+<p>The <code>OP_NIP</code> operation removes the second value from the top of the stack. So as we go operation by operation, the values from before are removed and we are left with just the sum value:</p>
+
+<pre><code>--- &lt;&lt; base
+sum
+</code></pre>
+
+<p>Then we push <code>38</code> and check for equality. Now in order for the transaction to be valid, the script must end with a non-zero value at the top of the stack. So our sum must be equal to <code>38</code>. Since there are exactly 38 code sections, all of the equality checks must be true.</p>
+
+<p>Essentially this leaves us with a bunch of equations we have to satisfy to determine the flag.</p>
+
+<h1 id="other-section-types">Other section types:</h1>
+
+<p>There are two other types of sections that maintain the stack frame:</p>
+
+<h4 id="adding-with-a-constant">Adding with a constant</h4>
+
+<pre><code class="language-py">1 OP_PICK 
+113 
+OP_ADD 
+238 
+OP_EQUAL 
+OP_ADD 
+</code></pre>
+
+<p>In this case, we check if <code>val_1 + 113 == 238</code>. Since this must be true, we can determine that <code>val_1</code> is equal to <code>125</code> or <code>'}'</code>. Since flags are of the format <code>flag{md5}</code> we can deduce that the flag is stored backwards from the top of the stack like so:</p>
+
+<pre><code>}
+val_2
+val_3
+...
+val_33
+{
+g
+a
+l
+f
+</code></pre>
+
+<h4 id="hash-check">Hash Check</h4>
+
+<p>The third block type is a hash comparison such as:</p>
+
+<pre><code class="language-py">30 OP_PICK 
+OP_RIPEMD160 
+412fc6097e62d5c494b8df37e3805805467d1a2c 
+OP_EQUAL 
+OP_ADD 
+</code></pre>
+
+<p>This is checking whether <code>ripemd160(val_30) == '412fc6097e62d5c494b8df37e3805805467d1a2c'</code>. Since we know that <code>val_30</code> is a single ascii character, we only have to brute force a space of <code>2^7</code> which can be done like so:</p>
+
+<pre><code class="language-py">import hashlib
+
+def find(hash_string):
+    for i in range(32,128):
+        c = chr(i)
+        h = hashlib.new('ripemd160')
+        h.update(c)
+
+        if h.hexdigest() == hash_string:
+            return c
+
+    return ''
+</code></pre>
+
+<pre><code class="language-py">&gt;&gt;&gt; find('412fc6097e62d5c494b8df37e3805805467d1a2c')
+'2'
+</code></pre>
+
+<h1 id="the-boring-part">The Boring Part</h1>
+
+<p>Now, we have a series of equations and all that&rsquo;s left to do is find a flag such that all the equations are true. Unfortunately, after you go through and fill in all the constant ones, none of the other characters are forced to any value.</p>
+
+<p><em>Example equations below (left side is character index, right side is raw value)</em></p>
+
+<pre><code class="language-py">10 + 22 = 99
+13 + 10 = 105
+4 + 10 = 148
+33 + 20 = 198
+29 + 24 = 104
+26 + 28 = 148
+6 + 2 = 157
+5 + 2 = 157
+...
+</code></pre>
+
+<p>It felt kind of like a less exciting sudoku puzzle.</p>
+
+<p>In fact, I found two distinct sets of characters that had no equations comparing them to the other set.</p>
+
+<p>After I had gone through all the equations, I actually had three flags that appeared to pass all the checks:</p>
+
+<pre><code>flag{e612123bd7128a3df7598a6198fffc97}
+flag{e622223bc6128a4ce7698a6198feec88}
+flag{e632323bb5128a5bd7798a6198fddc79}
+</code></pre>
+
+<p><em>Note: I&rsquo;m not sure if I made a mistake here or if there was a slight logic error in the problem creation</em></p>
+
+<p>As the saying goes, &ldquo;the third flag&rsquo;s the charm,&rdquo; or something like that.</p>
+
+    </section>
+</article>
+
+<footer id="post-meta" class="clearfix">
+    <a href="https://twitter.com/hgarrereyn">
+    <img class="avatar" src="https://ctf.harrisongreen.me/images/avatar.png">
+    <div>
+        <span class="dark">hgarrereyn</span>
+        <span></span>
+    </div>
+    </a>
+    <section id="sharing">
+        <a class="twitter" href="https://twitter.com/intent/tweet?text=https%3a%2f%2fctf.harrisongreen.me%2f2017%2fsha2017%2fstolen-bitcoins%2f - SHA2017%20-%20Stolen%20Bitcoins%20%28300pt%29 by @hgarrereyn"><span class="icon-twitter"> tweet</span></a>
+
+<a class="facebook" href="#" onclick="
+    window.open(
+      'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),
+      'facebook-share-dialog',
+      'width=626,height=436');
+    return false;"><span class="icon-facebook-rect"> Share</span>
+</a>
+
+    </section>
+</footer>
+
+<div id="disqus_thread"></div>
+<script>
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "hgar" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+<ul id="post-list" class="archive readmore">
+    <h3>Read more</h3>
+
+    
+    
+    
+        <li>
+            <a href="/2018/uiuctf/galactic-brainfuck/">UIUCTF 2018 - Galactic Brain[fuck] (300pt)<aside class="dates">Apr 8 2018</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2018/uiuctf/how2heap/">UIUCTF 2018 - how2heap (300pt)<aside class="dates">Apr 8 2018</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/csaw/scv/">CSAW - SCV (100pt)<aside class="dates">Sep 19 2017</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/sha2017/megan-35/">SHA2017 - Megan-35 (200pt)<aside class="dates">Aug 6 2017</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/meepwn/bs/">MeePwn 2017 - bs (100pt)<aside class="dates">Jul 16 2017</aside></a>
+        </li>
+    
+</ul>
+
+
+
+        <footer id="footer">
+    
+        <div id="social">
+
+	
+	
+    <a class="symbol" href="https://www.github.com/hgarrereyn">
+        <i class="fa fa-github"></i>
+    </a>
+    
+
+
+</div>
+
+    
+    <p class="small">
+    
+        © Copyright 2018 Harrison Green
+    
+    </p>
+</footer>
+
+    </section>
+    
+<script src="https://ctf.harrisongreen.me/js/main.js"></script>
+<script src="https://ctf.harrisongreen.me/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-104192995-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+</body>
+</html>

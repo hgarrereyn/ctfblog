@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>2018s on hgarrereyn</title>
+    <link>https://ctf.harrisongreen.me/2018/</link>
+    <description>Recent content in 2018s on hgarrereyn</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 08 Apr 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://ctf.harrisongreen.me/2018/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>UIUCTF 2018 - Galactic Brain[fuck] (300pt)</title>
+      <link>https://ctf.harrisongreen.me/2018/uiuctf/galactic-brainfuck/</link>
+      <pubDate>Sun, 08 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://ctf.harrisongreen.me/2018/uiuctf/galactic-brainfuck/</guid>
+      <description>Galactic Brain[fuck] (300pt) Reversing
+Description: We brought uiuctfsck back, but we made it worse
+nc challenges1.uiuc.tf 11338
+Files:
+ interpreter.py  Solution The stack machine used a character by character comparison to validate the user provided flag and was vulnerable to a timing attack.
+Overview In the provided python file, we see a multi-machine implementation of the brainfuck programming language. At the top of the file, the flag is imported:</description>
+    </item>
+    
+    <item>
+      <title>UIUCTF 2018 - how2heap (300pt)</title>
+      <link>https://ctf.harrisongreen.me/2018/uiuctf/how2heap/</link>
+      <pubDate>Sun, 08 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://ctf.harrisongreen.me/2018/uiuctf/how2heap/</guid>
+      <description>how2heap (300pt) Exploitation
+Description: intro to heap exploitation
+nc challenges1.uiuc.tf 38910
+Files:
+ how2heap libc-2.26.so  Solution The application allows you to store the name and age of GW2 characters. These characters are stored in an array-backed binary max heap on the stack in the following manner:
+ | 8 bytes || 8 bytes | ---------------------- base &amp;gt; [ counter ] [ age0 ][ name0 ] [ age1 ][ name1 ] [ age2 ][ name2 ] [ age3 ][ name3 ] .</description>
+    </item>
+    
+  </channel>
+</rss>
